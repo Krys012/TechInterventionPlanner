@@ -1,0 +1,172 @@
+%% version cli
+classDiagram
+    %% Modèle de base
+    class Intervention {
+        -int id
+        -string type
+        -string lieu
+        -time_t date
+        -int duree
+        -string technicienId
+        -string statut
+        -string commentaires
+        +getType() string
+        +setStatut(string)
+        +getInfos() string
+    }
+
+    class InterventionMaintenance {
+        +getType() string
+    }
+
+    class InterventionUrgence {
+        -int priorite
+        +getType() string
+        +getPriorite() int
+    }
+
+    class Technicien {
+        -string id
+        -string nom
+        -string specialite
+        -string contact
+        +getInfos() string
+    }
+
+    %% Design Pattern: Factory
+    class InterventionFactory {
+        <<interface>>
+        +creerIntervention() Intervention*
+    }
+
+    class MaintenanceFactory {
+        +creerIntervention() Intervention*
+    }
+
+    class UrgenceFactory {
+        +creerIntervention() Intervention*
+    }
+
+    %% Design Pattern: Decorator
+    class InterventionDecorator {
+        -Intervention* intervention
+        +getType() string
+        +getInfos() string
+    }
+
+    class SuiviGPSDecorator {
+        -string coordonnees
+        +setCoordonnees(string)
+        +getCoordonnees() string
+        +getInfos() string
+    }
+
+    class PiecesJointesDecorator {
+        -vector~string~ piecesJointes
+        +ajouterPieceJointe(string)
+        +getPiecesJointes() vector~string~
+        +getInfos() string
+    }
+
+    %% Design Pattern: Observer
+    class InterventionObserver {
+        <<interface>>
+        +notifier(string message)
+    }
+
+    class ConsoleObserver {
+        +notifier(string message)
+    }
+
+    class LogObserver {
+        -ofstream logFile
+        +notifier(string message)
+    }
+
+    %% Design Pattern: Facade
+    class GestionnaireInterventions {
+        -vector~Intervention*~ interventions
+        -map~string, Technicien~ techniciens
+        -vector~InterventionObserver*~ observateurs
+        +creerIntervention(string, string, time_t, int)
+        +supprimerIntervention(int)
+        +modifierIntervention(int, string, string, time_t, int)
+        +changerStatutIntervention(int, string, string)
+        +getInterventionsParJour(time_t) vector~Intervention~
+        +compterInterventionsParJour(int, int) map~int, int~
+        +assignerTechnicien(int, string)
+        +ajouterObservateur(InterventionObserver*)
+        +notifierTous(string)
+        +sauvegarder()
+    }
+
+    %% Design Pattern: Proxy
+    class IGestionnaireInterventions {
+        <<interface>>
+        +creerIntervention(string, string, time_t, int)
+        +supprimerIntervention(int)
+        +modifierIntervention(int, string, string, time_t, int)
+        +changerStatutIntervention(int, string, string)
+        +getInterventionsParJour(time_t) vector~Intervention~
+    }
+
+    class GestionnaireInterventionsSecurise {
+        -GestionnaireInterventions* gestionnaireReel
+        -string utilisateur
+        -map~string, string~ droitsUtilisateurs
+        -bool verifierDroit(string) bool
+        +creerIntervention(string, string, time_t, int)
+        +supprimerIntervention(int)
+        +modifierIntervention(int, string, string, time_t, int)
+        +changerStatutIntervention(int, string, string)
+        +getInterventionsParJour(time_t) vector~Intervention~
+    }
+
+    %% Authentification
+    class SystemeAuthentification {
+        -map~string, string~ utilisateurs
+        -map~string, string~ roles
+        -string utilisateurCourant
+        +connecter(string, string) bool
+        +deconnecter()
+        +getUtilisateurCourant() string
+        +getRoleUtilisateur(string) string
+    }
+
+    %% Interface CLI
+    class CLI {
+        -SystemeAuthentification* auth
+        -IGestionnaireInterventions* gestionnaire
+        +demarrer()
+        +afficherMenuPrincipal()
+        +afficherInterventionsJour(time_t)
+        +afficherCalendrierMensuel(int, int)
+        +creerNouvelleIntervention()
+        +modifierIntervention()
+        +supprimerIntervention()
+        +cloturerIntervention()
+    }
+
+    %% Relations d'héritage
+    Intervention <|-- InterventionMaintenance
+    Intervention <|-- InterventionUrgence
+    InterventionFactory <|-- MaintenanceFactory
+    InterventionFactory <|-- UrgenceFactory
+    Intervention <|-- InterventionDecorator
+    InterventionDecorator <|-- SuiviGPSDecorator
+    InterventionDecorator <|-- PiecesJointesDecorator
+    InterventionObserver <|-- ConsoleObserver
+    InterventionObserver <|-- LogObserver
+    IGestionnaireInterventions <|.. GestionnaireInterventions
+    IGestionnaireInterventions <|.. GestionnaireInterventionsSecurise
+
+    %% Relations de composition/agrégation
+    InterventionDecorator o-- Intervention : contient >
+    GestionnaireInterventions o-- Intervention : gère >
+    GestionnaireInterventions o-- Technicien : référence >
+    GestionnaireInterventions o-- InterventionObserver : notifie >
+    GestionnaireInterventionsSecurise o-- GestionnaireInterventions : encapsule >
+    CLI o-- SystemeAuthentification : utilise >
+    CLI o-- IGestionnaireInterventions : interagit avec >
+    MaintenanceFactory ..> InterventionMaintenance : crée >
+    UrgenceFactory ..> InterventionUrgence : crée >
