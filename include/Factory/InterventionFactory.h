@@ -1,0 +1,8 @@
+//
+// Created by Léo KRYS on 20/04/2025.
+//
+
+#ifndef INTERVENTIONFACTORY_H
+#define INTERVENTIONFACTORY_H
+
+#endif //INTERVENTIONFACTORY_H

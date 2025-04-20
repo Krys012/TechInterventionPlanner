@@ -1,0 +1,8 @@
+//
+// Created by Léo KRYS on 20/04/2025.
+//
+
+#ifndef EMERGENCYFACTORY_H
+#define EMERGENCYFACTORY_H
+
+#endif //EMERGENCYFACTORY_H
