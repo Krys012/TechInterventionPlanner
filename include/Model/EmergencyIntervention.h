@@ -5,7 +5,7 @@
 #ifndef EMERGENCY_INTERVENTION_H
 #define EMERGENCY_INTERVENTION_H
 
-#include "Intervention.h"
+#include "Model/Intervention.h"
 
 /**
  * @class EmergencyIntervention
