@@ -25,8 +25,12 @@ set(SOURCES
         src/Business/TechnicianManager.cpp
         src/Business/NotificationSystem.cpp
         src/Factory/MaintenanceFactory.cpp
+        src/Factory/EmergencyFactory.cpp
         src/Factory/InterventionFactoryRegistry.cpp
         src/main.cpp
+        src/Observer/ConsoleObserver.cpp
+        src/Observer/LogObserver.cpp
+        src/Observer/TechnicianNotificationObserver.cpp
 
 )
 
@@ -41,8 +45,11 @@ set(HEADERS
         include/Factory/InterventionFactory.h
         include/Factory/MaintenanceFactory.h
         include/Factory/EmergencyFactory.h
-        src/Factory/EmergencyFactory.cpp
         include/Factory/InterventionFactoryRegistry.h
+        include/Observer/InterventionObserver.h
+        include/Observer/ConsoleObserver.h
+        include/Observer/LogObserver.h
+        include/Observer/TechnicianNotificationObserver.h
 
 )
 
