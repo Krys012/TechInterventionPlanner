@@ -1,6 +1,7 @@
 //
 // Created by Léo KRYS on 20/04/2025.
 //
+
 #ifndef INTERVENTION_H
 #define INTERVENTION_H
 
@@ -40,27 +41,27 @@ public:
      */
     virtual ~Intervention() = default;
 
-    // Getters and setters
-    int getId() const;
-    void setId(int id);
+    // Getters and setters - all made virtual
+    virtual int getId() const;
+    virtual void setId(int id);
 
-    std::string getLocation() const;
-    void setLocation(const std::string& location);
+    virtual std::string getLocation() const;
+    virtual void setLocation(const std::string& location);
 
-    std::time_t getDate() const;
-    void setDate(std::time_t date);
+    virtual std::time_t getDate() const;
+    virtual void setDate(std::time_t date);
 
-    int getDuration() const;
-    void setDuration(int duration);
+    virtual int getDuration() const;
+    virtual void setDuration(int duration);
 
-    std::string getTechnicianId() const;
-    void setTechnicianId(const std::string& technicianId);
+    virtual std::string getTechnicianId() const;
+    virtual void setTechnicianId(const std::string& technicianId);
 
-    std::string getStatus() const;
-    void setStatus(const std::string& status);
+    virtual std::string getStatus() const;
+    virtual void setStatus(const std::string& status);
 
-    std::string getComments() const;
-    void setComments(const std::string& comments);
+    virtual std::string getComments() const;
+    virtual void setComments(const std::string& comments);
 
     /**
      * @brief Pure virtual method to get the intervention type
