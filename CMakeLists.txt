@@ -21,6 +21,16 @@ set(SOURCES
         src/Model/Technician.cpp
         src/Model/MaintenanceIntervention.cpp
         src/Model/EmergencyIntervention.cpp
+        src/Business/InterventionPlanner.cpp
+        src/Business/TechnicianManager.cpp
+        src/Business/NotificationSystem.cpp
+        src/Factory/MaintenanceFactory.cpp
+        src/Factory/EmergencyFactory.cpp
+        src/Factory/InterventionFactoryRegistry.cpp
+        src/main.cpp
+        src/Observer/ConsoleObserver.cpp
+        src/Observer/LogObserver.cpp
+        src/Observer/TechnicianNotificationObserver.cpp
 
 )
 
@@ -30,6 +40,16 @@ set(HEADERS
         include/Model/Technician.h
         include/Model/EmergencyIntervention.h
         include/Model/MaintenanceIntervention.h
+        include/Business/TechnicianManager.h
+        include/Business/NotificationSystem.h
+        include/Factory/InterventionFactory.h
+        include/Factory/MaintenanceFactory.h
+        include/Factory/EmergencyFactory.h
+        include/Factory/InterventionFactoryRegistry.h
+        include/Observer/InterventionObserver.h
+        include/Observer/ConsoleObserver.h
+        include/Observer/LogObserver.h
+        include/Observer/TechnicianNotificationObserver.h
 
 )
 
