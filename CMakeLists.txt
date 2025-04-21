@@ -31,6 +31,9 @@ set(SOURCES
         src/Observer/ConsoleObserver.cpp
         src/Observer/LogObserver.cpp
         src/Observer/TechnicianNotificationObserver.cpp
+        src/Decorator/InterventionDecorator.cpp
+        src/Decorator/GPSTrackingDecorator.cpp
+        src/Decorator/AttachmentsDecorator.cpp
 
 )
 
@@ -50,6 +53,9 @@ set(HEADERS
         include/Observer/ConsoleObserver.h
         include/Observer/LogObserver.h
         include/Observer/TechnicianNotificationObserver.h
+        include/Decorator/InterventionDecorator.h
+        include/Decorator/GPSTrackingDecorator.h
+        include/Decorator/AttachmentsDecorator.h
 
 )
 
