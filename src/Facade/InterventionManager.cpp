@@ -540,13 +540,23 @@ bool InterventionManager::saveData(const std::string& interventionsFile,
 
 bool InterventionManager::loadData(const std::string& interventionsFile,
                                  const std::string& techniciansFile) {
-    bool interventionsLoaded = loadInterventionsFromFile(interventionsFile);
-    bool techniciansLoaded = loadTechniciansFromFile(techniciansFile);
+    try {
+        bool interventionsLoaded = loadInterventionsFromFile(interventionsFile);
+        bool techniciansLoaded = loadTechniciansFromFile(techniciansFile);
 
-    notifyObservers("data_load",
-                   "Data loaded from " + interventionsFile + " and " + techniciansFile);
+        notifyObservers("data_load",
+                       "Data loaded from " + interventionsFile + " and " + techniciansFile);
 
-    return interventionsLoaded && techniciansLoaded;
+        return interventionsLoaded && techniciansLoaded;
+    } catch (const std::exception& e) {
+        std::cerr << "Error loading data: " << e.what() << std::endl;
+        return false;
+    } catch (...) {
+        std::cerr << "Unknown error loading data" << std::endl;
+        return false;
+    }
+
+
 }
 
 bool InterventionManager::saveInterventionsToFile(const std::string& filename) const {
@@ -557,36 +567,57 @@ bool InterventionManager::saveInterventionsToFile(const std::string& filename) c
             return false;
         }
 
-        file << "{\n  \"interventions\": [\n";
+        file << "{\n  \"interventions\": [";
 
-        bool first = true;
-        for (const auto& pair : interventions) {
-            const auto& id = pair.first;
-            const auto& intervention = pair.second;
+        // Vérifiez si nous avons des interventions à sauvegarder
+        if (interventions.empty()) {
+            // Collection vide, juste fermer le tableau
+            file << "]\n}";
+        } else {
+            // Nous avons des interventions à sauvegarder
+            file << "\n";
 
-            if (!first) {
-                file << ",\n";
+            bool first = true;
+            for (const auto& pair : interventions) {
+                const auto& id = pair.first;
+                const auto& intervention = pair.second;
+
+                if (!first) {
+                    file << ",\n";
+                }
+                first = false;
+
+                // Vérifiez que l'intervention n'est pas nullptr
+                if (!intervention) {
+                    std::cerr << "Warning: Null intervention found with ID " << id << std::endl;
+                    continue;
+                }
+
+                try {
+                    // Format date
+                    char dateBuffer[30];
+                    std::time_t date = intervention->getDate();
+                    std::strftime(dateBuffer, sizeof(dateBuffer), "%Y-%m-%d %H:%M", std::localtime(&date));
+
+                    file << "    {\n"
+                         << "      \"id\": " << id << ",\n"
+                         << "      \"type\": \"" << intervention->getType() << "\",\n"
+                         << "      \"location\": \"" << intervention->getLocation() << "\",\n"
+                         << "      \"date\": \"" << dateBuffer << "\",\n"
+                         << "      \"duration\": " << intervention->getDuration() << ",\n"
+                         << "      \"technicianId\": \"" << intervention->getTechnicianId() << "\",\n"
+                         << "      \"status\": \"" << intervention->getStatus() << "\",\n"
+                         << "      \"comments\": \"" << intervention->getComments() << "\"\n"
+                         << "    }";
+                } catch (const std::exception& e) {
+                    std::cerr << "Warning: Error processing intervention " << id << ": " << e.what() << std::endl;
+                    continue;
+                }
             }
-            first = false;
 
-            // Format date
-            char dateBuffer[30];
-            std::time_t date = intervention->getDate();
-            std::strftime(dateBuffer, sizeof(dateBuffer), "%Y-%m-%d %H:%M", std::localtime(&date));
-
-            file << "    {\n"
-                 << "      \"id\": " << id << ",\n"
-                 << "      \"type\": \"" << intervention->getType() << "\",\n"
-                 << "      \"location\": \"" << intervention->getLocation() << "\",\n"
-                 << "      \"date\": \"" << dateBuffer << "\",\n"
-                 << "      \"duration\": " << intervention->getDuration() << ",\n"
-                 << "      \"technicianId\": \"" << intervention->getTechnicianId() << "\",\n"
-                 << "      \"status\": \"" << intervention->getStatus() << "\",\n"
-                 << "      \"comments\": \"" << intervention->getComments() << "\"\n"
-                 << "    }";
+            file << "\n  ]\n}";
         }
 
-        file << "\n  ]\n}";
         file.close();
 
         std::cout << "Saved " << interventions.size() << " interventions to " << filename << std::endl;
@@ -607,27 +638,42 @@ bool InterventionManager::saveTechniciansToFile(const std::string& filename) con
             return false;
         }
 
-        file << "{\n  \"technicians\": [\n";
+        file << "{\n  \"technicians\": [";
 
-        bool first = true;
-        for (const auto& pair : technicians) {
-            const auto& id = pair.first;
-            const auto& technician = pair.second;
+        // Vérifiez si nous avons des techniciens à sauvegarder
+        if (technicians.empty()) {
+            // Collection vide, juste fermer le tableau
+            file << "]\n}";
+        } else {
+            // Nous avons des techniciens à sauvegarder
+            file << "\n";
 
-            if (!first) {
-                file << ",\n";
+            bool first = true;
+            for (const auto& pair : technicians) {
+                const auto& id = pair.first;
+                const auto& technician = pair.second;
+
+                if (!first) {
+                    file << ",\n";
+                }
+                first = false;
+
+                try {
+                    file << "    {\n"
+                         << "      \"id\": \"" << id << "\",\n"
+                         << "      \"name\": \"" << technician.getName() << "\",\n"
+                         << "      \"specialty\": \"" << technician.getSpecialty() << "\",\n"
+                         << "      \"contact\": \"" << technician.getContact() << "\"\n"
+                         << "    }";
+                } catch (const std::exception& e) {
+                    std::cerr << "Warning: Error processing technician " << id << ": " << e.what() << std::endl;
+                    continue;
+                }
             }
-            first = false;
 
-            file << "    {\n"
-                 << "      \"id\": \"" << id << "\",\n"
-                 << "      \"name\": \"" << technician.getName() << "\",\n"
-                 << "      \"specialty\": \"" << technician.getSpecialty() << "\",\n"
-                 << "      \"contact\": \"" << technician.getContact() << "\"\n"
-                 << "    }";
+            file << "\n  ]\n}";
         }
 
-        file << "\n  ]\n}";
         file.close();
 
         std::cout << "Saved " << technicians.size() << " technicians to " << filename << std::endl;

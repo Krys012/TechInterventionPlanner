@@ -854,8 +854,13 @@ void CLI::handleSaveData(const std::vector<std::string>& args) {
         techniciansFile = args[1];
     }
 
-    // Note: Nous devons accéder à travers notre façade
-    if (dynamic_cast<InterventionManager*>(manager.get())->saveData(interventionsFile, techniciansFile)) {
+    InterventionManager* realManager = manager->getRealManager();
+    if (realManager == nullptr) {
+        std::cout << "Failed to access intervention manager." << std::endl;
+        return;
+    }
+
+    if (realManager->saveData(interventionsFile, techniciansFile)) {
         std::cout << "Data saved successfully." << std::endl;
     } else {
         std::cout << "Failed to save data." << std::endl;
