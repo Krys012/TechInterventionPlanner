@@ -2,315 +2,322 @@
 Scholar project for design pattern course
 
 ## Description
-Cette application console permet de gérer la planification d'interventions techniques pour une équipe de maintenance. Elle implémente plusieurs design patterns pour offrir une architecture extensible, maintenable et robuste. Développée en C++, elle permet aux gestionnaires, techniciens et administrateurs de gérer efficacement le planning des interventions techniques sur différents sites.
+This console application allows you to manage the planning of technical interventions for a maintenance team. It implements several design patterns to offer an extensible, maintainable, and robust architecture. Developed in C++, it enables managers, technicians, and administrators to efficiently manage the schedule of technical interventions at different sites.
 
-## Fonctionnalités
-- Création et gestion de techniciens et d'interventions
-- Génération automatique d'interventions types (maintenance, urgence)
-- Affichage des interventions par jour ou par mois
-- Modification et clôture d'interventions
-- Système d'authentification et gestion des droits
-- Journalisation des actions
+## Features
+- Creation and management of technicians and interventions
+- Automatic generation of intervention types (maintenance, emergency)
+- Display of interventions by day or month
+- Modification and closure of interventions
+- Authentication system and access rights management
+- Action logging
 
-## Design Patterns implémentés
+## Implemented Design Patterns
 
 ### 1. Factory Method
 
-**Définition :** Ce pattern fournit une interface pour créer des objets d'une classe parente, tout en permettant aux sous-classes de modifier le type d'objets créés.
+**Definition :** This pattern provides an interface for creating objects of a parent class, while allowing subclasses to modify the type of objects created.
 
-**Structure UML :**
+** UML Structure :**
 
 ```mermaid
 classDiagram
-    class InterventionFactory {
-        <<interface>>
-        +creerIntervention() : Intervention
-    }
-    class MaintenanceFactory {
-        +creerIntervention() : Intervention
-    }
-    class UrgenceFactory {
-        +creerIntervention() : Intervention
-    }
-    class Intervention {
-        <<abstract>>
-        +getType() : string
-    }
-    class InterventionMaintenance {
-        +getType() : string
-    }
-    class InterventionUrgence {
-        -priorite : int
-        +getType() : string
-        +getPriorite() : int
-    }
-    
-    InterventionFactory <|-- MaintenanceFactory
-    InterventionFactory <|-- UrgenceFactory
-    Intervention <|-- InterventionMaintenance
-    Intervention <|-- InterventionUrgence
-    
-    MaintenanceFactory ..> InterventionMaintenance : crée
-    UrgenceFactory ..> InterventionUrgence : crée
+  class InterventionFactory {
+    <<interface>>
+    +createIntervention() : Intervention
+    +createIntervention(location, date, duration) : Intervention
+  }
+  class MaintenanceFactory {
+    +createIntervention() : Intervention
+    +createIntervention(location, date, duration) : Intervention
+  }
+  class EmergencyFactory {
+    +createIntervention() : Intervention
+    +createIntervention(location, date, duration) : Intervention
+    +createEmergencyIntervention(location, date, duration, priority) : Intervention
+  }
+  class Intervention {
+    <<abstract>>
+    +getType() : string
+  }
+  class MaintenanceIntervention {
+    +getType() : string
+  }
+  class EmergencyIntervention {
+    -priority : int
+    +getType() : string
+    +getPriority() : int
+  }
+
+  InterventionFactory <|-- MaintenanceFactory
+  InterventionFactory <|-- EmergencyFactory
+  Intervention <|-- MaintenanceIntervention
+  Intervention <|-- EmergencyIntervention
+
+  MaintenanceFactory ..> MaintenanceIntervention : creates
+  EmergencyFactory ..> EmergencyIntervention : creates
 ```
 
-**Implémentation dans notre projet :**
-- Chaque type d'intervention (maintenance, urgence) possède sa propre Factory
-- Les Factories sont enregistrées dans le gestionnaire d'interventions
-- Lors de la création d'une intervention, le système sélectionne dynamiquement la Factory appropriée
-- Le code client manipule uniquement l'interface Intervention sans se soucier des types spécifiques
-
+**Implementation in our project :**
+- Each intervention type (maintenance, emergency) has its own factory
+- Factories are registered in the intervention manager
+- When creating an intervention, the system dynamically selects the appropriate factory
+- Client code only manipulates the Intervention interface without concerning itself with specific types
+- 
 **Avantages :**
-- La création d'interventions spécialisées est isolée du reste du code
-- L'ajout de nouveaux types d'interventions ne nécessite pas de modifier les classes existantes
-- Les spécificités de chaque type d'intervention sont encapsulées dans leur classe respective
+- The creation of specialized interventions is isolated from the rest of the code
+- Adding new types of interventions does not require modifying existing classes
+- The specifics of each intervention type are encapsulated in their respective classes
+
 
 ### 2. Decorator
 
-**Définition :** Ce pattern permet d'ajouter dynamiquement des comportements ou responsabilités à un objet sans modifier sa structure, en "enveloppant" l'objet dans d'autres objets.
+**Definition :** This pattern allows for dynamically adding behaviors or responsibilities to an object without modifying its structure, by "wrapping" the object in other objects.
 
-**Structure UML :**
+** UML Structure :**
 
 ```mermaid
 classDiagram
-    class Intervention {
-        <<interface>>
-        +getType() : string
-        +getInfos() : string
-    }
-    class InterventionConcrete {
-        +getType() : string
-        +getInfos() : string
-    }
-    class InterventionDecorator {
-        -intervention : Intervention
-        +getType() : string
-        +getInfos() : string
-    }
-    class SuiviGPSDecorator {
-        -coordonnees : string
-        +setCoordonnees(string)
-        +getCoordonnees() : string
-        +getInfos() : string
-    }
-    class PiecesJointesDecorator {
-        -piecesJointes : vector~string~
-        +ajouterPieceJointe(string)
-        +getPiecesJointes() : vector~string~
-        +getInfos() : string
-    }
-    
-    Intervention <|.. InterventionConcrete
-    Intervention <|.. InterventionDecorator
-    InterventionDecorator <|-- SuiviGPSDecorator
-    InterventionDecorator <|-- PiecesJointesDecorator
-    
-    InterventionDecorator o-- Intervention
+  class Intervention {
+    <<interface>>
+    +getType() : string
+    +getInfo() : string
+  }
+  class InterventionConcrete {
+    +getType() : string
+    +getInfo() : string
+  }
+  class InterventionDecorator {
+    -intervention : Intervention
+    +getType() : string
+    +getInfo() : string
+  }
+  class GPSTrackingDecorator {
+    -trackingData : vector~GPSCoordinate~
+    +addCoordinate(latitude, longitude, timestamp)
+    +getCurrentLocation() : pair~double, double~
+    +getInfo() : string
+  }
+  class AttachmentsDecorator {
+    -attachments : vector~Attachment~
+    +addAttachment(filename, description) : bool
+    +getAttachmentFilenames() : vector~string~
+    +getInfo() : string
+  }
+
+  Intervention <|.. InterventionConcrete
+  Intervention <|.. InterventionDecorator
+  InterventionDecorator <|-- GPSTrackingDecorator
+  InterventionDecorator <|-- AttachmentsDecorator
+
+  InterventionDecorator o-- Intervention
 ```
 
-**Implémentation dans notre projet :**
-- L'objet de base (Intervention) peut être enrichi dynamiquement avec :
-    - Suivi GPS pour localiser le technicien
-    - Pièces jointes pour documents techniques
-    - Notifications pour rappels automatiques
-    - Options de facturation
-- Les décorateurs peuvent être combinés librement selon les besoins
-- Chaque décorateur enrichit les méthodes de l'intervention tout en préservant son interface
+**Implementation in our project :**
+- The base object (Intervention) can be dynamically enhanced with:
+  - GPS tracking to locate the technician
+  - Attachments for technical documents
+  - Notifications for automatic reminders
+  - Billing options
+- Decorators can be freely combined according to needs
+- Each decorator enriches the intervention's methods while preserving its interface
+
+
 
 **Avantages :**
-- Flexibilité pour ajouter ou retirer des fonctionnalités à l'exécution
-- Évite la création d'une multitude de sous-classes pour toutes les combinaisons possibles
-- Respect du principe de responsabilité unique (chaque décorateur gère une préoccupation)
+- Flexibility to add or remove features at runtime
+- Avoids creating a multitude of subclasses for all possible combinations
+- Respects the single responsibility principle (each decorator manages one concern)
 
 ### 3. Facade
 
-**Définition :** Ce pattern fournit une interface unifiée à un ensemble d'interfaces d'un sous-système, définissant une interface de plus haut niveau qui rend le sous-système plus facile à utiliser.
+**Definition :** This pattern provides a unified interface to a set of interfaces in a subsystem, defining a higher-level interface that makes the subsystem easier to use.
 
-**Structure UML :**
+** UML Structure :**
 
 ```mermaid
 classDiagram
-    class GestionnaireInterventions {
-        +creerIntervention(type, lieu, date, duree)
-        +supprimerIntervention(id)
-        +getInterventionsParJour(date)
-        +assignerTechnicien(interventionId, technicienId)
-        +changerStatutIntervention(id, statut)
-    }
-    class SystemeNotification {
-        -envoyerNotification(destinataire, message)
-    }
-    class GestionTechniciens {
-        -estDisponible(technicienId, date, duree)
-        -planifierIntervention(technicienId, date, duree)
-    }
-    class SystemeJournalisation {
-        -enregistrer(message)
-        -enregistrerErreur(message)
-    }
-    class PlanificateurIntervention {
-        -optimiserPlanning()
-    }
-    
-    GestionnaireInterventions --> SystemeNotification : utilise
-    GestionnaireInterventions --> GestionTechniciens : utilise
-    GestionnaireInterventions --> SystemeJournalisation : utilise
-    GestionnaireInterventions --> PlanificateurIntervention : utilise
+  class InterventionManager {
+    +createIntervention(type, location, date, duration)
+    +deleteIntervention(id)
+    +getInterventionsForDay(date)
+    +assignTechnician(interventionId, technicianId)
+    +changeInterventionStatus(id, status)
+    +saveData(interventionsFile, techniciansFile)
+    +loadData(interventionsFile, techniciansFile)
+  }
+  class NotificationSystem {
+    -sendNotification(recipient, message)
+  }
+  class TechnicianManager {
+    -isAvailable(technicianId, date, duration)
+    -scheduleIntervention(technicianId, date, duration)
+  }
+  class LoggingSystem {
+    -log(message)
+    -logError(message)
+  }
+  class InterventionPlanner {
+    -optimizeSchedule()
+  }
+
+  InterventionManager --> NotificationSystem : uses
+  InterventionManager --> TechnicianManager : uses
+  InterventionManager --> LoggingSystem : uses
+  InterventionManager --> InterventionPlanner : uses
 ```
 
-**Implémentation dans notre projet :**
-- La façade `GestionnaireInterventions` centralise toutes les opérations complexes
-- Elle coordonne plusieurs sous-systèmes :
-    - Création et gestion des interventions via les factories
-    - Notification des changements
-    - Journalisation des actions
-    - Vérification de disponibilité des techniciens
-    - Planification optimale des interventions
-- L'interface CLI interagit uniquement avec cette façade
+**Implementation in our project :**
+- The `InterventionManager` facade centralizes all complex operations
+- It coordinates several subsystems:
+  - Creation and management of interventions via factories
+  - Notification of changes
+  - Logging of actions
+  - Checking technician availability
+  - Optimal scheduling of interventions
+  - Data persistence with save/load functionality
+- The CLI interface interacts only with this facade
 
 **Avantages :**
-- Simplification de l'utilisation du système pour le code client
-- Découplage entre les sous-systèmes et l'interface utilisateur
-- Centralisation de la logique de coordination
+- Simplification of system use for client code
+- Decoupling between subsystems and the user interface
+- Centralization of coordination logic
 
 ### 4. Observer
 
-**Définition :** Ce pattern définit une dépendance un-à-plusieurs entre objets, de sorte que lorsqu'un objet change d'état, tous ses dépendants sont notifiés et mis à jour automatiquement.
+**Definition :** This pattern defines a one-to-many dependency between objects, so that when one object changes state, all its dependents are notified and updated automatically.
 
-**Structure UML :**
+** UML Structure :**
 
 ```mermaid
 classDiagram
-    class Sujet {
-        -observateurs : vector~Observer~
-        +ajouterObservateur(Observer)
-        +retirerObservateur(Observer)
-        +notifierObservateurs(event)
-    }
-    class GestionnaireInterventions {
-        -interventions : vector~Intervention~
-        +creerIntervention()
-        +modifierIntervention()
-        +supprimerIntervention()
-    }
-    class InterventionObserver {
-        <<interface>>
-        +notifier(InterventionEvent)
-        +estInteressePar(InterventionEvent) : bool
-    }
-    class ConsoleObserver {
-        +notifier(InterventionEvent)
-    }
-    class LogObserver {
-        -fichierLog : string
-        +notifier(InterventionEvent)
-    }
-    class EmailObserver {
-        -adresseEmail : string
-        +notifier(InterventionEvent)
-    }
-    
-    Sujet <|-- GestionnaireInterventions
-    InterventionObserver <|.. ConsoleObserver
-    InterventionObserver <|.. LogObserver
-    InterventionObserver <|.. EmailObserver
-    
-    Sujet o-- InterventionObserver
+  class Subject {
+    -observers : vector~Observer~
+    +addObserver(Observer)
+    +removeObserver(Observer)
+    +notifyObservers(event)
+  }
+  class InterventionManager {
+    -interventions : map~int, Intervention~
+    +createIntervention()
+    +modifyIntervention()
+    +deleteIntervention()
+  }
+  class InterventionObserver {
+    <<interface>>
+    +notify(message)
+    +isInterestedIn(eventType) : bool
+  }
+  class ConsoleObserver {
+    -interestedEvents : vector~string~
+    +notify(message)
+    +isInterestedIn(eventType) : bool
+  }
+  class LogObserver {
+    -logFilePath : string
+    +notify(message)
+  }
+
+  Subject <|-- InterventionManager
+  InterventionObserver <|.. ConsoleObserver
+  InterventionObserver <|.. LogObserver
+
+  Subject o-- InterventionObserver
 ```
 
-**Implémentation dans notre projet :**
-- Le `GestionnaireInterventions` (sujet) maintient une liste d'observateurs
-- À chaque événement significatif (création, modification, suppression), les observateurs sont notifiés
-- Différents types d'observateurs réagissent différemment :
-    - `ConsoleObserver` : affiche des messages dans la console
-    - `LogObserver` : enregistre les événements dans un fichier journal
-    - `EmailObserver` : envoie des notifications par email
-    - `TechnicienMobileObserver` : simule l'envoi de notifications mobiles
-- Les observateurs peuvent filtrer les événements qui les intéressent
+**Implementation in our project :**
+- The `InterventionManager` (subject) maintains a list of observers
+- For each significant event (creation, modification, deletion), observers are notified
+- Different types of observers react differently:
+    - `ConsoleObserver` : displays messages in the console
+    - `LogObserver` : records events in a log file
+    - Additional observers can be added for email or mobile notifications
+- Observers can filter the events they are interested in
 
 **Avantages :**
-- Communication automatique entre composants sans couplage fort
-- Extensibilité : de nouveaux observateurs peuvent être ajoutés sans modifier le sujet
-- Répartition des responsabilités : chaque observateur se concentre sur un type de notification
+- Automatic communication between components without tight coupling
+- Extensibility: new observers can be added without modifying the subject
+- Distribution of responsibilities: each observer focuses on a type of notification
 
 ### 5. Proxy
 
-**Définition :** Ce pattern fournit un substitut ou un placeholder pour contrôler l'accès à un objet, ajoutant une couche d'indirection pour des fonctionnalités supplémentaires.
+**Definition :** This pattern provides a substitute or placeholder to control access to an object, adding a layer of indirection for additional functionality.
 
-**Structure UML :**
+** UML Structure:**
 
 ```mermaid
 classDiagram
-    class IGestionnaireInterventions {
-        <<interface>>
-        +creerIntervention(type, lieu, date, duree)
-        +supprimerIntervention(id)
-        +modifierIntervention(id, lieu, date, duree)
-        +changerStatutIntervention(id, statut)
-    }
-    class GestionnaireInterventions {
-        -interventions : vector~Intervention~
-        +creerIntervention(type, lieu, date, duree)
-        +supprimerIntervention(id)
-        +modifierIntervention(id, lieu, date, duree)
-        +changerStatutIntervention(id, statut)
-    }
-    class GestionnaireInterventionsSecurise {
-        -gestionnaireReel : GestionnaireInterventions
-        -utilisateur : string
-        -droitsUtilisateurs : map~string, string~
-        -verifierDroit(droitRequis) : bool
-        +creerIntervention(type, lieu, date, duree)
-        +supprimerIntervention(id)
-        +modifierIntervention(id, lieu, date, duree)
-        +changerStatutIntervention(id, statut)
-    }
-    
-    IGestionnaireInterventions <|.. GestionnaireInterventions
-    IGestionnaireInterventions <|.. GestionnaireInterventionsSecurise
-    GestionnaireInterventionsSecurise o-- GestionnaireInterventions
+  class IInterventionManager {
+    <<interface>>
+    +createIntervention(type, location, date, duration)
+    +deleteIntervention(id)
+    +modifyIntervention(id, location, date, duration)
+    +changeInterventionStatus(id, status)
+  }
+  class InterventionManager {
+    -interventions : map~int, Intervention~
+    +createIntervention(type, location, date, duration)
+    +deleteIntervention(id)
+    +modifyIntervention(id, location, date, duration)
+    +changeInterventionStatus(id, status)
+  }
+  class InterventionManagerSecure {
+    -realManager : InterventionManager
+    -currentUser : string
+    -userAccessLevels : map~string, AccessLevel~
+    -checkAccess(requiredLevel) : bool
+    +createIntervention(type, location, date, duration)
+    +deleteIntervention(id)
+    +modifyIntervention(id, location, date, duration)
+    +changeInterventionStatus(id, status)
+  }
+
+  IInterventionManager <|.. InterventionManager
+  IInterventionManager <|.. InterventionManagerSecure
+  InterventionManagerSecure o-- InterventionManager
 ```
 
-**Implémentation dans notre projet :**
-- Le proxy `GestionnaireInterventionsSecurise` encapsule le gestionnaire réel
-- Il implémente la même interface `IGestionnaireInterventions`
-- Avant de déléguer chaque appel au gestionnaire réel, il vérifie :
-    - Si l'utilisateur est authentifié
-    - Si l'utilisateur a les droits appropriés (lecture/écriture)
-    - Si l'action est autorisée pour son profil (admin, technicien, gestionnaire)
-- En cas de violation des droits, une exception est levée ou une erreur est retournée
+**Implementation in our project :**
+- The `GestionnaireInterventionsSecurise` proxy encapsulates the real manager
+- It implements the same `IInterventionManager` interface
+- Before delegating each call to the real manager, it checks:
+    - If the user is authenticated
+    - If the user has appropriate rights (read/write)
+    - If the action is authorized for their profile (admin, technician, manager)
+- In case of rights violation, an exception is thrown or an error is returned
 
 **Avantages :**
-- Séparation des préoccupations : la logique de sécurité est isolée
-- Contrôle d'accès transparent pour le code client
-- Application cohérente des règles de sécurité à tous les points d'accès
+- Separation of concerns: security logic is isolated
+- Transparent access control for client code
+- Consistent application of security rules at all access points
 
-## Architecture Globale
+
+## Global Architecture
 
 ```mermaid
 classDiagram
     class CLI {
-        +demarrer()
-        +afficherMenuPrincipal()
-        +creerNouvelleIntervention()
-        +afficherCalendrierMensuel(mois, annee)
+        +start()
+        +displayMenu()
+        +createIntervention()
+        +displayMonthlyCalendar(month, year)
     }
-    class SystemeAuthentification {
-        +connecter(utilisateur, motDePasse) : bool
-        +deconnecter()
-        +getUtilisateurCourant() : string
+    class AuthenticationSystem {
+        +authenticate(user, password) : bool
+        +logout()
+        +getCurrentUser() : string
     }
-    class IGestionnaireInterventions {
+    class IInterventionManager {
         <<interface>>
     }
-    class GestionnaireInterventionsSecurise {
-        -gestionnaireReel
-        -utilisateur
+    class InterventionManagerSecure {
+        -realManager
+        -currentUser
     }
-    class GestionnaireInterventions {
+    class InterventionManager {
         -factories
         -interventions
-        -observateurs
+        -observers
     }
     class InterventionFactory {
         <<interface>>
@@ -319,71 +326,72 @@ classDiagram
         <<interface>>
     }
     
-    CLI --> SystemeAuthentification : utilise
-    CLI --> IGestionnaireInterventions : utilise
-    IGestionnaireInterventions <|.. GestionnaireInterventionsSecurise
-    IGestionnaireInterventions <|.. GestionnaireInterventions
-    GestionnaireInterventionsSecurise o-- GestionnaireInterventions
-    GestionnaireInterventions o-- InterventionFactory
-    GestionnaireInterventions o-- InterventionObserver
+    CLI --> AuthenticationSystem : uses
+    CLI --> IInterventionManager : uses
+    IInterventionManager <|.. InterventionManagerSecure
+    IInterventionManager <|.. InterventionManager
+    InterventionManagerSecure o-- InterventionManager
+    InterventionManager o-- InterventionFactory
+    InterventionManager o-- InterventionObserver
 ```
 
-## Interface CLI
+## CLI Interface
 
-L'interface en ligne de commande offre plusieurs fonctionnalités :
-- Authentification utilisateur
-- Affichage des interventions du jour
-- Affichage du calendrier mensuel
-- Création/modification/suppression d'interventions
-- Clôture d'interventions avec commentaires
+The command-line interface offers several functionalities:
+- User authentication
+- Display of today's interventions
+- Display of the monthly calendar
+- Creation/modification/deletion of interventions
+- Closure of interventions with comments
+- Data persistence with save/load operations
 
-## Exemple d'exécution
+## Execution Example
 
 ```
-=== GESTIONNAIRE D'INTERVENTIONS ===
-1. Afficher les interventions d'aujourd'hui
-2. Afficher les interventions par date
-3. Afficher le calendrier mensuel
-4. Créer une intervention
-5. Modifier une intervention
-6. Supprimer une intervention
-7. Clôturer une intervention
-0. Quitter
-Votre choix : 1
+=== INTERVENTION MANAGER ===
+1. Display today's interventions
+2. Display interventions by date
+3. Display monthly calendar
+4. Create an intervention
+5. Modify an intervention
+6. Delete an intervention
+7. Change intervention status
+0. Exit
+Your choice: 1
 
-| ID | Type       | Lieu       | Heure  | Durée | Technicien | Statut    |
-|----+------------+------------+--------+-------+------------+-----------|
-| 1  | Maintenance| Site A     | 14:30  | 120   | TECH001    | Planifiée |
-| 2  | Urgence    | Site B     | 16:45  | 60    | TECH002    | En cours  |
+| ID | Type       | Location   | Time   | Duration | Technician | Status    |
+|----+------------+------------+--------+----------+------------+-----------|
+| 1  | Maintenance| Site A     | 14:30  | 120      | TECH001    | Scheduled |
+| 2  | Emergency  | Site B     | 16:45  | 60       | TECH002    | In progress|
 ```
 
-## Comment utiliser l'application
+## How to Use the Application
 
 1. **Compilation**
 ```bash
-g++ -std=c++17 main.cpp -o gestionnaire_interventions
+g++ -std=c++17 main.cpp -o intervention_manager
 ```
 
-2. **Exécution**
+2. **Execution**
 ```bash
-./gestionnaire_interventions
+./intervention_manager
 ```
 
 3. **Authentification**
-   Utilisateurs préconfigurés :
-- admin / admin123 (droits complets)
-- user / user123 (droits de lecture seulement)
-- tech / tech123 (droits limités)
+Preconfigured users :
+- admin / admin123 (full right)
+- user / user123 (read-only right)
+- tech / tech123 (limited right)
 
-## Pour développer et améliorer ce projet
+## To Develop and Improve
 
-Voici quelques idées d'extensions :
-- Ajout d'une interface graphique (Qt/GTK)
-- Persistance en base de données
-- Export CSV/PDF des plannings
-- Système de rappels et notifications
-- API REST pour intégration avec d'autres systèmes
+Here are some extensions ideas :
+- Adding a graphical interface (Qt/GTK)
+- Database persistance
+- CSV/PDF export of schedules
+- reminder and notification system
+- REST API integration with other system
 
 ---
 
-_Ce projet a été réalisé dans le cadre d'un cours sur les design patterns en C++._
+_This project was created as part of a course on design patern._
