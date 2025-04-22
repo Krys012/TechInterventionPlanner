@@ -30,7 +30,8 @@ public:
      * @return True if the observer is interested in this event type
      */
     virtual bool isInterestedIn(const std::string& eventType) const {
-        return true; // Default implementation is interested in all events
+       (void)eventType; // Explicitly mark as unused
+       return true; // Default implementation is interested in all events
     }
 };
 

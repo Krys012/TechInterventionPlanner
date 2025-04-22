@@ -34,6 +34,10 @@ set(SOURCES
         src/Decorator/InterventionDecorator.cpp
         src/Decorator/GPSTrackingDecorator.cpp
         src/Decorator/AttachmentsDecorator.cpp
+        src/Proxy/InterventionManagerSecure.cpp
+        src/Facade/InterventionManager.cpp
+        src/CLI/AuthenticationSystem.cpp
+        src/CLI/CLI.cpp
 
 )
 
@@ -56,6 +60,11 @@ set(HEADERS
         include/Decorator/InterventionDecorator.h
         include/Decorator/GPSTrackingDecorator.h
         include/Decorator/AttachmentsDecorator.h
+        include/Proxy/IInterventionManager.h
+        include/Proxy/InterventionManagerSecure.h
+        include/Facade/InterventionManager.h
+        include/CLI/CLI.h
+        include/CLI/AuthenticationSystem.h
 
 )
 
