@@ -843,8 +843,8 @@ void CLI::handleSaveData(const std::vector<std::string>& args) {
         return;
     }
 
-    std::string interventionsFile = "interventions.json";
-    std::string techniciansFile = "technicians.json";
+    std::string interventionsFile = "./interventions.json";
+    std::string techniciansFile = "./technicians.json";
 
     if (args.size() >= 1) {
         interventionsFile = args[0];
@@ -878,8 +878,8 @@ void CLI::handleLoadData(const std::vector<std::string>& args) {
         return;
     }
 
-    std::string interventionsFile = "interventions.json";
-    std::string techniciansFile = "technicians.json";
+    std::string interventionsFile = "./interventions.json";
+    std::string techniciansFile = "./technicians.json";
 
     if (args.size() >= 1) {
         interventionsFile = args[0];

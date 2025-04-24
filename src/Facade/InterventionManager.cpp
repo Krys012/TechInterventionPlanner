@@ -3,6 +3,10 @@
 //
 
 #include "Facade/InterventionManager.h"
+#include "Model/EmergencyIntervention.h"
+#include "Model/MaintenanceIntervention.h"
+#include "Decorator/GPSTrackingDecorator.h"
+#include "Decorator/AttachmentsDecorator.h"
 #include <iostream>
 #include <fstream>
 #include <algorithm>
@@ -11,6 +15,9 @@
 
 #include "AttachmentsDecorator.h"
 #include "GPSTrackingDecorator.h"
+#include <nlohmann/json.hpp>
+
+using json = nlohmann::json;
 
 InterventionManager::InterventionManager(bool autoSave)
     : technicianManager(),
@@ -402,7 +409,7 @@ std::map<int, int> InterventionManager::getInterventionCountsForMonth(int month,
 }
 
 bool InterventionManager::saveInterventions() {
-    return saveData("interventions.json", "technicians.json");
+    return saveData("./interventions.json", "./technicians.json");
 }
 
 bool InterventionManager::loadInterventions() {
@@ -542,7 +549,9 @@ bool InterventionManager::loadData(const std::string& interventionsFile,
                                  const std::string& techniciansFile) {
     try {
         bool interventionsLoaded = loadInterventionsFromFile(interventionsFile);
+        std::cout << "Interventions loaded: "  << interventionsLoaded << std::endl;
         bool techniciansLoaded = loadTechniciansFromFile(techniciansFile);
+        std::cout << "Technicians loaded: " << techniciansLoaded << std::endl;
 
         notifyObservers("data_load",
                        "Data loaded from " + interventionsFile + " and " + techniciansFile);
@@ -555,69 +564,96 @@ bool InterventionManager::loadData(const std::string& interventionsFile,
         std::cerr << "Unknown error loading data" << std::endl;
         return false;
     }
-
-
 }
+
 
 bool InterventionManager::saveInterventionsToFile(const std::string& filename) const {
     try {
+        // Create a JSON object with an array of interventions
+        json j;
+        j["interventions"] = json::array();
+
+        // Add each intervention to the array
+        for (const auto& pair : interventions) {
+            const int id = pair.first;
+            const auto& intervention = pair.second;
+
+            // Create a JSON object for this intervention
+            json interventionJson;
+            interventionJson["id"] = id;
+            interventionJson["type"] = intervention->getType();
+            interventionJson["location"] = intervention->getLocation();
+
+            // Format date as a string
+            char dateBuffer[30];
+            std::time_t date = intervention->getDate();
+            std::strftime(dateBuffer, sizeof(dateBuffer), "%Y-%m-%d %H:%M", std::localtime(&date));
+            interventionJson["date"] = dateBuffer;
+
+            interventionJson["duration"] = intervention->getDuration();
+            interventionJson["technicianId"] = intervention->getTechnicianId();
+            interventionJson["status"] = intervention->getStatus();
+            interventionJson["comments"] = intervention->getComments();
+
+            // Add specific fields for EmergencyIntervention
+            if (intervention->getType() == "Emergency") {
+                // Safely downcast to EmergencyIntervention*
+                // We need to be careful here because decorators might be wrapping our intervention
+                // We'll need to extract the concrete type from potentially nested decorators
+                const Intervention* baseIntervention = intervention.get();
+                while (dynamic_cast<const InterventionDecorator*>(baseIntervention)) {
+                    baseIntervention = dynamic_cast<const InterventionDecorator*>(baseIntervention)->getWrappedIntervention();
+                }
+
+                if (const EmergencyIntervention* emergency = dynamic_cast<const EmergencyIntervention*>(baseIntervention)) {
+                    interventionJson["priority"] = emergency->getPriority();
+                }
+            }
+
+            // Check for decorators and add their information
+            if (const GPSTrackingDecorator* gpsDecorator = dynamic_cast<const GPSTrackingDecorator*>(intervention.get())) {
+                interventionJson["hasGPS"] = true;
+                interventionJson["updateFrequency"] = gpsDecorator->getUpdateFrequency();
+
+                // Add GPS tracking data
+                json trackingData = json::array();
+                for (const auto& coord : gpsDecorator->getTrackingData()) {
+                    json coordJson;
+                    coordJson["latitude"] = coord.latitude;
+                    coordJson["longitude"] = coord.longitude;
+                    coordJson["timestamp"] = static_cast<long long>(coord.timestamp);
+                    trackingData.push_back(coordJson);
+                }
+                interventionJson["gpsData"] = trackingData;
+            } else {
+                interventionJson["hasGPS"] = false;
+            }
+
+            if (const AttachmentsDecorator* attachmentsDecorator = dynamic_cast<const AttachmentsDecorator*>(intervention.get())) {
+                interventionJson["hasAttachments"] = true;
+
+                // Add attachments data
+                json attachments = json::array();
+                for (const auto& filename : attachmentsDecorator->getAttachmentFilenames()) {
+                    attachments.push_back(filename);
+                }
+                interventionJson["attachments"] = attachments;
+            } else {
+                interventionJson["hasAttachments"] = false;
+            }
+
+            // Add this intervention to the array
+            j["interventions"].push_back(interventionJson);
+        }
+
+        // Write the JSON to file with pretty formatting (indentation of 2 spaces)
         std::ofstream file(filename);
         if (!file.is_open()) {
             std::cerr << "Could not open file: " << filename << std::endl;
             return false;
         }
 
-        file << "{\n  \"interventions\": [";
-
-        // Vérifiez si nous avons des interventions à sauvegarder
-        if (interventions.empty()) {
-            // Collection vide, juste fermer le tableau
-            file << "]\n}";
-        } else {
-            // Nous avons des interventions à sauvegarder
-            file << "\n";
-
-            bool first = true;
-            for (const auto& pair : interventions) {
-                const auto& id = pair.first;
-                const auto& intervention = pair.second;
-
-                if (!first) {
-                    file << ",\n";
-                }
-                first = false;
-
-                // Vérifiez que l'intervention n'est pas nullptr
-                if (!intervention) {
-                    std::cerr << "Warning: Null intervention found with ID " << id << std::endl;
-                    continue;
-                }
-
-                try {
-                    // Format date
-                    char dateBuffer[30];
-                    std::time_t date = intervention->getDate();
-                    std::strftime(dateBuffer, sizeof(dateBuffer), "%Y-%m-%d %H:%M", std::localtime(&date));
-
-                    file << "    {\n"
-                         << "      \"id\": " << id << ",\n"
-                         << "      \"type\": \"" << intervention->getType() << "\",\n"
-                         << "      \"location\": \"" << intervention->getLocation() << "\",\n"
-                         << "      \"date\": \"" << dateBuffer << "\",\n"
-                         << "      \"duration\": " << intervention->getDuration() << ",\n"
-                         << "      \"technicianId\": \"" << intervention->getTechnicianId() << "\",\n"
-                         << "      \"status\": \"" << intervention->getStatus() << "\",\n"
-                         << "      \"comments\": \"" << intervention->getComments() << "\"\n"
-                         << "    }";
-                } catch (const std::exception& e) {
-                    std::cerr << "Warning: Error processing intervention " << id << ": " << e.what() << std::endl;
-                    continue;
-                }
-            }
-
-            file << "\n  ]\n}";
-        }
-
+        file << j.dump(2);
         file.close();
 
         std::cout << "Saved " << interventions.size() << " interventions to " << filename << std::endl;
@@ -628,52 +664,39 @@ bool InterventionManager::saveInterventionsToFile(const std::string& filename) c
     }
 }
 
+
 bool InterventionManager::saveTechniciansToFile(const std::string& filename) const {
     try {
         const auto& technicians = technicianManager.getAllTechnicians();
 
+        // Create a JSON object with an array of technicians
+        json j;
+        j["technicians"] = json::array();
+
+        // Add each technician to the array
+        for (const auto& pair : technicians) {
+            const auto& id = pair.first;
+            const auto& technician = pair.second;
+
+            // Create a JSON object for this technician
+            json technicianJson;
+            technicianJson["id"] = id;
+            technicianJson["name"] = technician.getName();
+            technicianJson["specialty"] = technician.getSpecialty();
+            technicianJson["contact"] = technician.getContact();
+
+            // Add this technician to the array
+            j["technicians"].push_back(technicianJson);
+        }
+
+        // Write the JSON to file with pretty formatting (indentation of 2 spaces)
         std::ofstream file(filename);
         if (!file.is_open()) {
             std::cerr << "Could not open file: " << filename << std::endl;
             return false;
         }
 
-        file << "{\n  \"technicians\": [";
-
-        // Vérifiez si nous avons des techniciens à sauvegarder
-        if (technicians.empty()) {
-            // Collection vide, juste fermer le tableau
-            file << "]\n}";
-        } else {
-            // Nous avons des techniciens à sauvegarder
-            file << "\n";
-
-            bool first = true;
-            for (const auto& pair : technicians) {
-                const auto& id = pair.first;
-                const auto& technician = pair.second;
-
-                if (!first) {
-                    file << ",\n";
-                }
-                first = false;
-
-                try {
-                    file << "    {\n"
-                         << "      \"id\": \"" << id << "\",\n"
-                         << "      \"name\": \"" << technician.getName() << "\",\n"
-                         << "      \"specialty\": \"" << technician.getSpecialty() << "\",\n"
-                         << "      \"contact\": \"" << technician.getContact() << "\"\n"
-                         << "    }";
-                } catch (const std::exception& e) {
-                    std::cerr << "Warning: Error processing technician " << id << ": " << e.what() << std::endl;
-                    continue;
-                }
-            }
-
-            file << "\n  ]\n}";
-        }
-
+        file << j.dump(2);
         file.close();
 
         std::cout << "Saved " << technicians.size() << " technicians to " << filename << std::endl;
@@ -685,25 +708,21 @@ bool InterventionManager::saveTechniciansToFile(const std::string& filename) con
 }
 
 bool InterventionManager::loadInterventionsFromFile(const std::string& filename) {
-    // Dans une application réelle, vous utiliseriez une bibliothèque JSON pour cela
-    // Pour cet exemple, nous allons simuler le chargement avec quelques interventions prédéfinies
-
-    std::cout << "Loading interventions from " << filename << "..." << std::endl;
-
     try {
-        // Vérifier si le fichier existe
+        // Check if the file exists
         std::ifstream file(filename);
         if (!file.is_open()) {
-            std::cout << "File not found. Creating sample interventions instead." << std::endl;
+            std::cout << "File not found: " << filename << std::endl;
+            std::cout << "Creating sample interventions instead." << std::endl;
 
-            // Fichier non trouvé, créer des exemples d'interventions
+            // File not found, create sample interventions
             std::time_t now = std::time(nullptr);
 
-            // Supprime toutes les interventions existantes
+            // Clear existing interventions
             interventions.clear();
             nextInterventionId = 1;
 
-            // Crée quelques interventions d'exemple
+            // Create some sample interventions
             createIntervention("Maintenance", "Office Building A", now + 3600, 120);
             createIntervention("Emergency", "Data Center B", now + 1800, 60);
             createIntervention("Maintenance", "Retail Store C", now + 7200, 90);
@@ -711,31 +730,132 @@ bool InterventionManager::loadInterventionsFromFile(const std::string& filename)
             return true;
         }
 
-        // Dans une application réelle, vous analyseriez le fichier JSON ici
-        // Pour cet exemple, nous allons simplement dire que nous avons chargé
-        // avec succès à partir du fichier
+        // Parse the JSON file
+        std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+        file.close();
 
-        std::cout << "Loaded interventions from file." << std::endl;
+        json j;
+        try {
+            json j = json::parse(content);
+            std::cout << "Loaded JSON: " << j.dump(2) << std::endl;
+        } catch (const json::parse_error& e) {
+            std::cerr << "JSON parse error: " << e.what() << std::endl;
+            return false;
+        }
+
+        // Clear existing interventions
+        interventions.clear();
+        nextInterventionId = 1;
+
+        // Process each intervention in the JSON
+        if (j.contains("interventions") && j["interventions"].is_array()) {
+            for (const auto& interventionJson : j["interventions"]) {
+                // Extract basic intervention data
+                int id = interventionJson["id"];
+                std::string type = interventionJson["type"];
+                std::string location = interventionJson["location"];
+
+                // Parse date string
+                std::string dateStr = interventionJson["date"];
+                struct tm tm = {};
+                std::istringstream ss(dateStr);
+                ss >> std::get_time(&tm, "%Y-%m-%d %H:%M");
+                std::time_t date = std::mktime(&tm);
+
+                int duration = interventionJson["duration"];
+
+                // Create the intervention
+                std::unique_ptr<Intervention> intervention;
+
+                if (type == "Maintenance") {
+                    intervention = std::make_unique<MaintenanceIntervention>(location, date, duration);
+                } else if (type == "Emergency") {
+                    int priority = interventionJson.value("priority", 3); // Default priority 3
+                    intervention = std::make_unique<EmergencyIntervention>(location, date, duration, priority);
+                } else {
+                    std::cerr << "Unknown intervention type: " << type << std::endl;
+                    continue;
+                }
+
+                // Ensure that the intervention is correctly initialized
+                if (!intervention) {
+                    std::cerr << "Failed to create intervention: " << type << " at " << location << std::endl;
+                    continue;
+                }
+
+                // Set additional fields
+                intervention->setId(id);
+                intervention->setTechnicianId(interventionJson["technicianId"]);
+                intervention->setStatus(interventionJson["status"]);
+                intervention->setComments(interventionJson["comments"]);
+
+                // Apply decorators if needed
+                if (interventionJson.value("hasGPS", false)) {
+                    int updateFrequency = interventionJson.value("updateFrequency", 15);
+                    auto gpsDecorator = std::make_unique<GPSTrackingDecorator>(std::move(intervention), updateFrequency);
+
+                    // Add GPS coordinates if available
+                    if (interventionJson.contains("gpsData") && interventionJson["gpsData"].is_array()) {
+                        for (const auto& coordJson : interventionJson["gpsData"]) {
+                            double latitude = coordJson["latitude"];
+                            double longitude = coordJson["longitude"];
+                            std::time_t timestamp = coordJson["timestamp"];
+                            gpsDecorator->addCoordinate(latitude, longitude, timestamp);
+                        }
+                    }
+
+                    intervention = std::move(gpsDecorator);
+                }
+
+                if (interventionJson.value("hasAttachments", false)) {
+                    auto attachmentsDecorator = std::make_unique<AttachmentsDecorator>(std::move(intervention));
+
+                    // Add attachments if available
+                    if (interventionJson.contains("attachments") && interventionJson["attachments"].is_array()) {
+                        for (const auto& filename : interventionJson["attachments"]) {
+                            attachmentsDecorator->addAttachment(filename);
+                        }
+                    }
+
+                    intervention = std::move(attachmentsDecorator);
+                }
+
+                // Add to interventions map
+                if (intervention) {
+                    interventions[id] = std::move(intervention);
+                } else {
+                    std::cerr << "Failed to store intervention with ID: " << id << std::endl;
+                    continue;
+                }
+
+                // Schedule the intervention in the planner
+                planner.scheduleIntervention(id, date, duration);
+
+                // Update nextInterventionId
+                if (id >= nextInterventionId) {
+                    nextInterventionId = id + 1;
+                }
+            }
+        }
+
+        std::cout << "Loaded " << interventions.size() << " interventions from file." << std::endl;
         return true;
     } catch (const std::exception& e) {
-        std::cerr << "Error loading interventions: " << e.what() << std::endl;
+        std::cerr << "Error loading interventions from file: " << e.what() << std::endl;
         return false;
     }
 }
 
+
 bool InterventionManager::loadTechniciansFromFile(const std::string& filename) {
-    // Dans une application réelle, vous utiliseriez une bibliothèque JSON pour cela
-    // Pour cet exemple, nous allons simuler le chargement avec quelques techniciens prédéfinis
-
-    std::cout << "Loading technicians from " << filename << "..." << std::endl;
-
     try {
-        // Vérifier si le fichier existe
+        // Check if the file exists
         std::ifstream file(filename);
         if (!file.is_open()) {
-            std::cout << "File not found. Creating sample technicians instead." << std::endl;
+            std::cout << "File not found: " << filename << std::endl;
+            std::cout << "Creating sample technicians instead." << std::endl;
 
-            // Fichier non trouvé, créer des exemples de techniciens
+            // File not found, create sample technicians
             technicianManager.addTechnician(Technician("TECH001", "John Smith", "Electrical", "john@example.com"));
             technicianManager.addTechnician(Technician("TECH002", "Jane Doe", "Plumbing", "jane@example.com"));
             technicianManager.addTechnician(Technician("TECH003", "Bob Johnson", "HVAC", "bob@example.com"));
@@ -743,14 +863,30 @@ bool InterventionManager::loadTechniciansFromFile(const std::string& filename) {
             return true;
         }
 
-        // Dans une application réelle, vous analyseriez le fichier JSON ici
-        // Pour cet exemple, nous allons simplement dire que nous avons chargé
-        // avec succès à partir du fichier
+        // Parse the JSON file
+        json j;
+        file >> j;
+        std::cout << "Loaded JSON: " << j.dump(2) << std::endl;
+        file.close();
 
-        std::cout << "Loaded technicians from file." << std::endl;
+        // Process each technician in the JSON
+        if (j.contains("technicians") && j["technicians"].is_array()) {
+            for (const auto& technicianJson : j["technicians"]) {
+                std::string id = technicianJson["id"];
+                std::string name = technicianJson["name"];
+                std::string specialty = technicianJson["specialty"];
+                std::string contact = technicianJson["contact"];
+
+                // Create and add the technician
+                Technician technician(id, name, specialty, contact);
+                technicianManager.addTechnician(technician);
+            }
+        }
+
+        std::cout << "Loaded " << technicianManager.getAllTechnicians().size() << " technicians from file." << std::endl;
         return true;
     } catch (const std::exception& e) {
-        std::cerr << "Error loading technicians: " << e.what() << std::endl;
+        std::cerr << "Error loading technicians from file: " << e.what() << std::endl;
         return false;
     }
 }

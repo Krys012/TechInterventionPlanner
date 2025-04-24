@@ -111,6 +111,8 @@ public:
     bool addGPSCoordinate(int interventionId, double latitude, double longitude) override;
 
     bool addAttachment(int interventionId, const std::string &filename, const std::string &description) override;
+
+    virtual ~InterventionManagerSecure() = default;
 };
 
 #endif // INTERVENTION_MANAGER_SECURE_H

@@ -203,8 +203,8 @@ public:
      * @param techniciansFile Path to the technicians file
      * @return True if saving was successful
      */
-    bool saveData(const std::string& interventionsFile = "interventions.json",
-                  const std::string& techniciansFile = "technicians.json");
+    bool saveData(const std::string& interventionsFile = "./interventions.json",
+                  const std::string& techniciansFile = "./technicians.json");
 
     /**
      * @brief Load interventions and technicians from files
@@ -212,8 +212,8 @@ public:
      * @param techniciansFile Path to the technicians file
      * @return True if loading was successful
      */
-    bool loadData(const std::string& interventionsFile = "interventions.json",
-                  const std::string& techniciansFile = "technicians.json");
+    bool loadData(const std::string& interventionsFile = "./interventions.json",
+                  const std::string& techniciansFile = "./technicians.json");
 
     /**
      * @brief Decorate an intervention with GPS tracking capability
