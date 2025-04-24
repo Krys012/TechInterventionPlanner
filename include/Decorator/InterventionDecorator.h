@@ -14,48 +14,54 @@
  */
 class InterventionDecorator : public Intervention {
 protected:
-    std::unique_ptr<Intervention> intervention;
+ std::unique_ptr<Intervention> intervention;
 
 public:
-    /**
-     * @brief Constructor
-     * @param intervention The intervention to decorate
-     */
-    explicit InterventionDecorator(std::unique_ptr<Intervention> intervention);
+ /**
+  * @brief Constructor
+  * @param intervention The intervention to decorate
+  */
+ explicit InterventionDecorator(std::unique_ptr<Intervention> intervention);
 
-    /**
-     * @brief Get the type of the underlying intervention
-     * @return Type as string
-     */
-    std::string getType() const override;
+ /**
+  * @brief Get the type of the underlying intervention
+  * @return Type as string
+  */
+ std::string getType() const override;
 
-    /**
-     * @brief Get information about the intervention
-     * @return Formatted string with intervention details
-     */
-    std::string getInfo() const override;
+ /**
+  * @brief Get information about the intervention
+  * @return Formatted string with intervention details
+  */
+ std::string getInfo() const override;
 
-    // Override all the getter/setter methods to delegate to the wrapped intervention
-    int getId() const override;
-    void setId(int id) override;
+ /**
+  * @brief Get access to the wrapped intervention
+  * @return Const pointer to the wrapped intervention
+  */
+ const Intervention* getWrappedIntervention() const;
 
-    std::string getLocation() const override;
-    void setLocation(const std::string& location) override;
+ // Override all the getter/setter methods to delegate to the wrapped intervention
+ int getId() const override;
+ void setId(int id) override;
 
-    std::time_t getDate() const override;
-    void setDate(std::time_t date) override;
+ std::string getLocation() const override;
+ void setLocation(const std::string& location) override;
 
-    int getDuration() const override;
-    void setDuration(int duration) override;
+ std::time_t getDate() const override;
+ void setDate(std::time_t date) override;
 
-    std::string getTechnicianId() const override;
-    void setTechnicianId(const std::string& technicianId) override;
+ int getDuration() const override;
+ void setDuration(int duration) override;
 
-    std::string getStatus() const override;
-    void setStatus(const std::string& status) override;
+ std::string getTechnicianId() const override;
+ void setTechnicianId(const std::string& technicianId) override;
 
-    std::string getComments() const override;
-    void setComments(const std::string& comments) override;
+ std::string getStatus() const override;
+ void setStatus(const std::string& status) override;
+
+ std::string getComments() const override;
+ void setComments(const std::string& comments) override;
 };
 
 #endif // INTERVENTION_DECORATOR_H

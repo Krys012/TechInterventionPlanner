@@ -16,6 +16,10 @@ std::string InterventionDecorator::getInfo() const {
     return intervention->getInfo();
 }
 
+const Intervention* InterventionDecorator::getWrappedIntervention() const {
+    return intervention.get();
+}
+
 int InterventionDecorator::getId() const {
     return intervention->getId();
 }

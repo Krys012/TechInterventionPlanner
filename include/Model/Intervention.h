@@ -74,6 +74,9 @@ public:
      * @return Formatted information as a string
      */
     virtual std::string getInfo() const;
+
+    virtual void clear();
+
 };
 
 #endif // INTERVENTION_H

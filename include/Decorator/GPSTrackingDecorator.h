@@ -15,7 +15,7 @@
  * @brief Adds GPS tracking functionality to an intervention
  */
 class GPSTrackingDecorator : public InterventionDecorator {
-private:
+public:
     struct GPSCoordinate {
         double latitude;
         double longitude;
@@ -25,6 +25,7 @@ private:
             : latitude(lat), longitude(lon), timestamp(time) {}
     };
 
+private:
     std::vector<GPSCoordinate> trackingData;
     int updateFrequency; // in minutes
 

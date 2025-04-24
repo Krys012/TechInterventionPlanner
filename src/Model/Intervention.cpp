@@ -93,3 +93,13 @@ std::string Intervention::getInfo() const {
 
     return oss.str();
 }
+
+void Intervention::clear() {
+    this->id = 0;
+    this->location.clear();
+    this->date = 0;
+    this->duration = 0;
+    this->technicianId.clear();
+    this->status = "Scheduled";
+    this->comments.clear();
+}

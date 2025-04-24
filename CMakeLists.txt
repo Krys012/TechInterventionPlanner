@@ -1,21 +1,30 @@
 cmake_minimum_required(VERSION 3.12)
 project(TechInterventionPlanner VERSION 1.0)
 
-# Définir le standard C++
+# Define C++ standard
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Options de compilation
+# Compilation options
 if(MSVC)
     add_compile_options(/W4)
 else()
     add_compile_options(-Wall -Wextra -pedantic)
 endif()
 
-# Activer l'option de debug pour les configurations Debug
+# Enable debug option for Debug configurations
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DDEBUG")
 
-# Structure du projet organisée par patterns et logique métier
+# Add nlohmann/json as a dependency
+include(FetchContent)
+FetchContent_Declare(
+        json
+        GIT_REPOSITORY https://github.com/nlohmann/json.git
+        GIT_TAG v3.11.2  # You can update to the latest version available
+)
+FetchContent_MakeAvailable(json)
+
+# Project structure organized by patterns and business logic
 set(SOURCES
         src/Model/Intervention.cpp
         src/Model/Technician.cpp
@@ -41,7 +50,7 @@ set(SOURCES
 
 )
 
-# Récupérer tous les fichiers d'en-tête
+# Get all header files
 set(HEADERS
         include/Model/Intervention.h
         include/Model/Technician.h
@@ -68,7 +77,7 @@ set(HEADERS
 
 )
 
-# Configurer les répertoires d'inclusion
+# Configure include directories
 include_directories(
         include
         include/Model
@@ -81,30 +90,33 @@ include_directories(
         include/CLI
 )
 
-# Créer l'exécutable
+# Create the executable
 add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})
 
-# Adapations spécifiques par OS
+# Link against nlohmann_json
+target_link_libraries(${PROJECT_NAME} PRIVATE nlohmann_json::nlohmann_json)
+
+# OS-specific adaptations
 if(WIN32)
-    # Configurations spécifiques à Windows
+    # Windows-specific configurations
     target_compile_definitions(${PROJECT_NAME} PRIVATE WINDOWS_PLATFORM)
 elseif(APPLE)
-    # Configurations spécifiques à macOS
+    # macOS-specific configurations
     target_compile_definitions(${PROJECT_NAME} PRIVATE MACOS_PLATFORM)
 elseif(UNIX)
-    # Configurations spécifiques à Linux
+    # Linux-specific configurations
     target_compile_definitions(${PROJECT_NAME} PRIVATE LINUX_PLATFORM)
 endif()
 
-# Installer l'exécutable
+# Install the executable
 install(TARGETS ${PROJECT_NAME} DESTINATION bin)
 
-# Faciliter le débogage avec des messages de statut
-message(STATUS "Système d'exploitation: ${CMAKE_SYSTEM_NAME}")
-message(STATUS "Compilateur: ${CMAKE_CXX_COMPILER_ID}")
-message(STATUS "Mode de compilation: ${CMAKE_BUILD_TYPE}")
+# Facilitate debugging with status messages
+message(STATUS "Operating system: ${CMAKE_SYSTEM_NAME}")
+message(STATUS "Compiler: ${CMAKE_CXX_COMPILER_ID}")
+message(STATUS "Build mode: ${CMAKE_BUILD_TYPE}")
 
-# Option pour permettre des tests unitaires (à implémenter ultérieurement)
+# Option to enable unit tests (to be implemented later)
 option(BUILD_TESTS "Build tests" OFF)
 if(BUILD_TESTS)
     enable_testing()
