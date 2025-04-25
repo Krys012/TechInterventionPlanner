@@ -175,39 +175,7 @@ Files:
 - wiring_diagram.pdf (Building electrical layout) [Added: 04/22/2025 11:30:45]
 ```
 
-### 7. Persistence des données (fonctionnalité de la Facade)
-
-1. Sauvegardez les données
-```
-> savedata
-Data saved successfully.
-```
-
-2. Déconnectez-vous et reconnectez-vous
-```
-> logout
-Logged out.
-> login admin admin123
-Login successful. Welcome, admin (admin).
-```
-
-3. Chargez les données
-```
-> loaddata
-Data loaded successfully.
-```
-
-4. Vérifiez que les interventions sont toujours là
-```
-> list 2025-04-25
-Interventions for 2025-04-25:
-ID | Type        | Location        | Time   | Duration | Technician | Status
-----+-------------+-----------------+--------+----------+------------+----------
-1  | Maintenance | Office Building A | 10:30  | 120      | TECH001    | Scheduled
-2  | Emergency   | Data Center B    | 14:45  | 60       | TECH002    | In Progress
-```
-
-### 8. Clôture de la démo
+### 7. Clôture de la démo
 
 ```
 > exit
