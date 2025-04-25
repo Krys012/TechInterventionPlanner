@@ -160,16 +160,6 @@ std::map<int, int> InterventionManagerSecure::getInterventionCountsForMonth(int 
     return realManager->getInterventionCountsForMonth(month, year);
 }
 
-bool InterventionManagerSecure::saveInterventions() {
-    if (!checkAccess(AccessLevel::MODIFY)) {
-        logAccessAttempt("saveInterventions", false);
-        return false;
-    }
-
-    logAccessAttempt("saveInterventions", true);
-    return realManager->saveInterventions();
-}
-
 InterventionManager* InterventionManagerSecure::getRealManager() const {
     // Optionally, you could add a security check here to ensure only admin users
     // can access the real manager directly
