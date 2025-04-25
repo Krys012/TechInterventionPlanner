@@ -11,14 +11,18 @@ This console application allows you to manage the planning of technical interven
 - Modification and closure of interventions
 - Authentication system and access rights management
 - Action logging
+- Export to various formats (text, CSV, JSON)
+
+## Data Persistence
+**Important**: This application maintains data only for the current session. All data is stored in memory and will be lost when the application is closed. To preserve data, use the `export` command to create an external file before exiting.
 
 ## Implemented Design Patterns
 
 ### 1. Factory Method
 
-**Definition :** This pattern provides an interface for creating objects of a parent class, while allowing subclasses to modify the type of objects created.
+**Definition:** This pattern provides an interface for creating objects of a parent class, while allowing subclasses to modify the type of objects created.
 
-** UML Structure :**
+**UML Structure:**
 
 ```mermaid
 classDiagram
@@ -58,13 +62,13 @@ classDiagram
   EmergencyFactory ..> EmergencyIntervention : creates
 ```
 
-**Implementation in our project :**
+**Implementation in our project:**
 - Each intervention type (maintenance, emergency) has its own factory
 - Factories are registered in the intervention manager
 - When creating an intervention, the system dynamically selects the appropriate factory
 - Client code only manipulates the Intervention interface without concerning itself with specific types
-- 
-**Avantages :**
+
+**Advantages:**
 - The creation of specialized interventions is isolated from the rest of the code
 - Adding new types of interventions does not require modifying existing classes
 - The specifics of each intervention type are encapsulated in their respective classes
@@ -72,9 +76,9 @@ classDiagram
 
 ### 2. Decorator
 
-**Definition :** This pattern allows for dynamically adding behaviors or responsibilities to an object without modifying its structure, by "wrapping" the object in other objects.
+**Definition:** This pattern allows for dynamically adding behaviors or responsibilities to an object without modifying its structure, by "wrapping" the object in other objects.
 
-** UML Structure :**
+**UML Structure:**
 
 ```mermaid
 classDiagram
@@ -113,27 +117,24 @@ classDiagram
   InterventionDecorator o-- Intervention
 ```
 
-**Implementation in our project :**
+**Implementation in our project:**
 - The base object (Intervention) can be dynamically enhanced with:
   - GPS tracking to locate the technician
   - Attachments for technical documents
   - Notifications for automatic reminders
-  - Billing options
 - Decorators can be freely combined according to needs
 - Each decorator enriches the intervention's methods while preserving its interface
 
-
-
-**Avantages :**
+**Advantages:**
 - Flexibility to add or remove features at runtime
 - Avoids creating a multitude of subclasses for all possible combinations
 - Respects the single responsibility principle (each decorator manages one concern)
 
 ### 3. Facade
 
-**Definition :** This pattern provides a unified interface to a set of interfaces in a subsystem, defining a higher-level interface that makes the subsystem easier to use.
+**Definition:** This pattern provides a unified interface to a set of interfaces in a subsystem, defining a higher-level interface that makes the subsystem easier to use.
 
-** UML Structure :**
+**UML Structure:**
 
 ```mermaid
 classDiagram
@@ -143,8 +144,8 @@ classDiagram
     +getInterventionsForDay(date)
     +assignTechnician(interventionId, technicianId)
     +changeInterventionStatus(id, status)
-    +saveData(interventionsFile, techniciansFile)
-    +loadData(interventionsFile, techniciansFile)
+    +initializeWithSampleData()
+    +exportSchedule(format, filename)
   }
   class NotificationSystem {
     -sendNotification(recipient, message)
@@ -167,7 +168,7 @@ classDiagram
   InterventionManager --> InterventionPlanner : uses
 ```
 
-**Implementation in our project :**
+**Implementation in our project:**
 - The `InterventionManager` facade centralizes all complex operations
 - It coordinates several subsystems:
   - Creation and management of interventions via factories
@@ -175,19 +176,19 @@ classDiagram
   - Logging of actions
   - Checking technician availability
   - Optimal scheduling of interventions
-  - Data persistence with save/load functionality
+  - Data export functionality
 - The CLI interface interacts only with this facade
 
-**Avantages :**
+**Advantages:**
 - Simplification of system use for client code
 - Decoupling between subsystems and the user interface
 - Centralization of coordination logic
 
 ### 4. Observer
 
-**Definition :** This pattern defines a one-to-many dependency between objects, so that when one object changes state, all its dependents are notified and updated automatically.
+**Definition:** This pattern defines a one-to-many dependency between objects, so that when one object changes state, all its dependents are notified and updated automatically.
 
-** UML Structure :**
+**UML Structure:**
 
 ```mermaid
 classDiagram
@@ -225,25 +226,25 @@ classDiagram
   Subject o-- InterventionObserver
 ```
 
-**Implementation in our project :**
+**Implementation in our project:**
 - The `InterventionManager` (subject) maintains a list of observers
 - For each significant event (creation, modification, deletion), observers are notified
 - Different types of observers react differently:
-    - `ConsoleObserver` : displays messages in the console
-    - `LogObserver` : records events in a log file
-    - Additional observers can be added for email or mobile notifications
+  - `ConsoleObserver` : displays messages in the console
+  - `LogObserver` : records events in a log file
+  - Additional observers can be added for email or mobile notifications
 - Observers can filter the events they are interested in
 
-**Avantages :**
+**Advantages:**
 - Automatic communication between components without tight coupling
 - Extensibility: new observers can be added without modifying the subject
 - Distribution of responsibilities: each observer focuses on a type of notification
 
 ### 5. Proxy
 
-**Definition :** This pattern provides a substitute or placeholder to control access to an object, adding a layer of indirection for additional functionality.
+**Definition:** This pattern provides a substitute or placeholder to control access to an object, adding a layer of indirection for additional functionality.
 
-** UML Structure:**
+**UML Structure:**
 
 ```mermaid
 classDiagram
@@ -277,16 +278,16 @@ classDiagram
   InterventionManagerSecure o-- InterventionManager
 ```
 
-**Implementation in our project :**
-- The `GestionnaireInterventionsSecurise` proxy encapsulates the real manager
+**Implementation in our project:**
+- The `InterventionManagerSecure` proxy encapsulates the real manager
 - It implements the same `IInterventionManager` interface
 - Before delegating each call to the real manager, it checks:
-    - If the user is authenticated
-    - If the user has appropriate rights (read/write)
-    - If the action is authorized for their profile (admin, technician, manager)
+  - If the user is authenticated
+  - If the user has appropriate rights (read/write)
+  - If the action is authorized for their profile (admin, technician, manager)
 - In case of rights violation, an exception is thrown or an error is returned
 
-**Avantages :**
+**Advantages:**
 - Separation of concerns: security logic is isolated
 - Transparent access control for client code
 - Consistent application of security rules at all access points
@@ -343,7 +344,31 @@ The command-line interface offers several functionalities:
 - Display of the monthly calendar
 - Creation/modification/deletion of interventions
 - Closure of interventions with comments
-- Data persistence with save/load operations
+- Data export operations
+
+## Available Commands
+
+| Command | Description |
+|---------|-------------|
+| help | Display available commands |
+| exit | Exit the application |
+| login | Login with username and password |
+| logout | Logout from the current session |
+| list | List interventions for a specific date |
+| view | View intervention details |
+| create | Create a new intervention |
+| modify | Modify an existing intervention |
+| delete | Delete an intervention |
+| assign | Assign a technician to an intervention |
+| status | Change intervention status |
+| addtech | Add a new technician |
+| techs | List all technicians |
+| calendar | Show calendar for a month |
+| initialize | Initialize the system with sample data |
+| export | Export schedule to a file (text, CSV, JSON) |
+| decorate | Add a decorator to an intervention |
+| addattachment | Add an attachment to a decorated intervention |
+| addgpscoord | Add GPS coordinates to a decorated intervention |
 
 ## Execution Example
 
@@ -369,6 +394,12 @@ Your choice: 1
 
 1. **Compilation**
 ```bash
+# Using CMake
+mkdir build && cd build
+cmake ..
+make
+
+# Direct compilation (alternative)
 g++ -std=c++17 main.cpp -o intervention_manager
 ```
 
@@ -377,21 +408,47 @@ g++ -std=c++17 main.cpp -o intervention_manager
 ./intervention_manager
 ```
 
-3. **Authentification**
-Preconfigured users :
-- admin / admin123 (full right)
-- user / user123 (read-only right)
-- tech / tech123 (limited right)
+3. **Authentication**
+   Preconfigured users:
+- admin / admin123 (full rights)
+- manager / manager123 (modify rights)
+- tech / tech123 (limited rights)
+- guest / guest123 (read-only rights)
+
+4. **Data Initialization**
+   After logging in as admin, use the `initialize` command to populate the system with sample data.
+
+5. **Data Export**
+   Before closing the application, use the `export` command to save the current state to a file:
+```
+export json interventions.json
+```
+
+## For Developers
+
+### Adding New Intervention Types
+1. Create a new class inheriting from `Intervention`
+2. Create a factory class inheriting from `InterventionFactory`
+3. Register the factory in `main.cpp` with the registry
+
+### Adding New Decorators
+1. Create a new decorator class inheriting from `InterventionDecorator`
+2. Implement the required methods, especially `getInfo()`
+3. Add necessary methods in `InterventionManager` to apply the decorator
+
+### Extending the CLI
+1. Add new command handlers in `CLI::initializeCommands()`
+2. Implement handler methods following the established pattern
 
 ## To Develop and Improve
 
-Here are some extensions ideas :
+Here are some extension ideas:
 - Adding a graphical interface (Qt/GTK)
-- Database persistance
-- CSV/PDF export of schedules
-- reminder and notification system
-- REST API integration with other system
+- Implementing database persistence
+- Adding CSV/PDF export of schedules
+- Implementing a reminder and notification system
+- Adding REST API integration with other systems
 
 ---
 
-_This project was created as part of a course on design patern._
+_This project was created as part of a course on design patterns._

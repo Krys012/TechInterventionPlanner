@@ -99,7 +99,6 @@ classDiagram
         -shared_ptr~NotificationSystem~ notificationSystem
         -vector~shared_ptr~InterventionObserver~~ observers
         -int nextInterventionId
-        -bool autoSave
         +createIntervention(string, string, time_t, int) int
         +deleteIntervention(int) bool
         +modifyIntervention(int, string, time_t, int) bool
@@ -109,10 +108,7 @@ classDiagram
         +assignTechnician(int, string) bool
         +addObserver(shared_ptr~InterventionObserver~)
         +removeObserver(InterventionObserver*)
-        +saveInterventions() bool
-        +loadInterventions() bool
-        +saveData(string, string) bool
-        +loadData(string, string) bool
+        +initializeWithSampleData() bool
         +optimizeSchedule(time_t) bool
         +exportSchedule(string, string) bool
     }
@@ -128,7 +124,6 @@ classDiagram
         +getInterventionsForDay(time_t) vector~Intervention*~
         +getInterventionCountsForMonth(int, int) map~int, int~
         +assignTechnician(int, string) bool
-        +saveInterventions() bool
     }
 
     class InterventionManagerSecure {
@@ -145,7 +140,6 @@ classDiagram
         +getIntervention(int) Intervention*
         +getInterventionsForDay(time_t) vector~Intervention*~
         +getInterventionCountsForMonth(int, int) map~int, int~
-        +saveInterventions() bool
     }
 
 %% Authentication
@@ -175,8 +169,8 @@ classDiagram
         +handleLogin(vector~string~)
         +handleListInterventions(vector~string~)
         +handleCreateIntervention(vector~string~)
-        +handleSaveData(vector~string~)
-        +handleLoadData(vector~string~)
+        +handleInitialize(vector~string~)
+        +handleExport(vector~string~)
     }
 
 %% Inheritance relationships
