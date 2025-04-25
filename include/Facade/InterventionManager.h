@@ -13,6 +13,7 @@
 #include "Observer/InterventionObserver.h"
 #include <map>
 #include <vector>
+#include <fstream>
 #include <memory>
 #include <string>
 
@@ -31,7 +32,6 @@ private:
     std::map<int, std::unique_ptr<Intervention>> interventions;
     std::vector<std::shared_ptr<InterventionObserver>> observers;
     int nextInterventionId;
-    bool autoSave;
 
     /**
      * @brief Notify all observers about an event
@@ -55,51 +55,17 @@ private:
     std::string generateInterventionSummary(int interventionId) const;
 
     /**
-     * @brief Auto save if enabled
-     */
-    void tryAutoSave();
-
-    /**
      * @brief Format a date as a string
      * @param date Date to format
      * @return Formatted date string
      */
     std::string formatDate(std::time_t date) const;
 
-    /**
-     * @brief Save interventions to a JSON file
-     * @param filename Path to the output file
-     * @return True if saving was successful
-     */
-    bool saveInterventionsToFile(const std::string& filename) const;
-
-    /**
-     * @brief Save technicians to a JSON file
-     * @param filename Path to the output file
-     * @return True if saving was successful
-     */
-    bool saveTechniciansToFile(const std::string& filename) const;
-
-    /**
-     * @brief Load interventions from a JSON file
-     * @param filename Path to the input file
-     * @return True if loading was successful
-     */
-    bool loadInterventionsFromFile(const std::string& filename);
-
-    /**
-     * @brief Load technicians from a JSON file
-     * @param filename Path to the input file
-     * @return True if loading was successful
-     */
-    bool loadTechniciansFromFile(const std::string& filename);
-
 public:
     /**
      * @brief Constructor
-     * @param autoSave Whether to automatically save after changes
      */
-    explicit InterventionManager(bool autoSave = false);
+    InterventionManager();
 
     /**
      * @brief Add an observer
@@ -112,12 +78,6 @@ public:
      * @param observer Observer to remove
      */
     void removeObserver(InterventionObserver* observer);
-
-    /**
-     * @brief Enable or disable auto-save
-     * @param enable Whether to enable auto-save
-     */
-    void setAutoSave(bool enable);
 
     /**
      * @brief Add a technician to the system
@@ -174,14 +134,6 @@ public:
 
     std::map<int, int> getInterventionCountsForMonth(int month, int year) const override;
 
-    bool saveInterventions() override;
-
-    /**
-     * @brief Load interventions from persistent storage
-     * @return True if loading was successful
-     */
-    bool loadInterventions();
-
     /**
      * @brief Optimize the schedule for a specific day
      * @param date The day to optimize
@@ -198,22 +150,10 @@ public:
     bool exportSchedule(const std::string& format, const std::string& outputFile) const;
 
     /**
-     * @brief Save interventions and technicians to files
-     * @param interventionsFile Path to the interventions file
-     * @param techniciansFile Path to the technicians file
-     * @return True if saving was successful
+     * @brief Initialize the system with sample data
+     * @return True if initialization was successful
      */
-    bool saveData(const std::string& interventionsFile = "./interventions.json",
-                  const std::string& techniciansFile = "./technicians.json");
-
-    /**
-     * @brief Load interventions and technicians from files
-     * @param interventionsFile Path to the interventions file
-     * @param techniciansFile Path to the technicians file
-     * @return True if loading was successful
-     */
-    bool loadData(const std::string& interventionsFile = "./interventions.json",
-                  const std::string& techniciansFile = "./technicians.json");
+    bool initializeWithSampleData();
 
     /**
      * @brief Decorate an intervention with GPS tracking capability
@@ -246,8 +186,6 @@ public:
      * @return True if attachment was added successfully
      */
     bool addAttachment(int interventionId, const std::string& filename, const std::string& description = "") override;
-
-  };
-
+};
 
 #endif // INTERVENTION_MANAGER_H

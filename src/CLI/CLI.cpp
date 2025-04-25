@@ -61,17 +61,11 @@ void CLI::initializeCommands() {
     commandHelp["calendar"] = "Show calendar for a month: calendar <month> <year>";
 
     // Data management
-    commandHandlers["save"] = [this](const auto& args) { handleSave(args); };
-    commandHelp["save"] = "Save all interventions";
+    commandHandlers["initialize"] = [this](const auto& args) { handleInitialize(args); };
+    commandHelp["initialize"] = "Initialize the system with sample data";
 
-    commandHandlers["load"] = [this](const auto& args) { handleLoad(args); };
-    commandHelp["load"] = "Load interventions from storage";
-
-    commandHandlers["savedata"] = [this](const auto& args) { handleSaveData(args); };
-    commandHelp["savedata"] = "Save all data to files: savedata [interventions_file] [technicians_file]";
-
-    commandHandlers["loaddata"] = [this](const auto& args) { handleLoadData(args); };
-    commandHelp["loaddata"] = "Load all data from files: loaddata [interventions_file] [technicians_file]";
+    commandHandlers["export"] = [this](const auto& args) { handleExport(args); };
+    commandHelp["export"] = "Export schedule to a file: export <format> <output_file>";
 
     // Decorator commands
     commandHandlers["decorate"] = [this](const auto& args) { handleDecorateIntervention(args); };
@@ -82,7 +76,6 @@ void CLI::initializeCommands() {
 
     commandHandlers["addgpscoord"] = [this](const auto& args) { handleAddGPSCoordinate(args); };
     commandHelp["addgpscoord"] = "Add GPS coordinates to a decorated intervention: addgpscoord <id> <latitude> <longitude>";
-
 }
 
 void CLI::start() {
@@ -232,7 +225,7 @@ std::string CLI::formatDateTime(std::time_t time) const {
 
 // Command handlers
 
-void CLI::handleHelp([[maybe_unused]]const std::vector<std::string>& args) {
+void CLI::handleHelp([[maybe_unused]] const std::vector<std::string>& args) {
     std::cout << "Available commands:" << std::endl;
 
     // Calculate the longest command name for alignment
@@ -287,7 +280,7 @@ void CLI::handleLogin(const std::vector<std::string>& args) {
     }
 }
 
-void CLI::handleLogout( [[maybe_unused]] const std::vector<std::string>& args) {
+void CLI::handleLogout([[maybe_unused]] const std::vector<std::string>& args) {
     if (currentUser.empty()) {
         std::cout << "Not logged in." << std::endl;
         return;
@@ -394,7 +387,7 @@ void CLI::handleCreateIntervention(const std::vector<std::string>& args) {
 
     if (args.size() < 4) {
         std::cout << "Usage: create <type> <location> <date> <duration>" << std::endl;
-        std::cout << "Example: create Maintenance \"Office Building A\" \"2023-06-15 14:30\" 120" << std::endl;
+        std::cout << "Example: create Maintenance \"Office Building A\" \"2025-06-15 14:30\" 120" << std::endl;
         return;
     }
 
@@ -665,7 +658,7 @@ void CLI::handleAddTechnician(const std::vector<std::string>& args) {
     }
 }
 
-void CLI::handleListTechnicians( [[maybe_unused]] const std::vector<std::string>& args) {
+void CLI::handleListTechnicians([[maybe_unused]] const std::vector<std::string>& args) {
     if (currentUser.empty()) {
         std::cout << "Please login first." << std::endl;
         return;
@@ -795,105 +788,71 @@ void CLI::handleCalendar(const std::vector<std::string>& args) {
     std::cout << "* = Day with interventions" << std::endl;
 }
 
-void CLI::handleSave( [[maybe_unused]] const std::vector<std::string>& args) {
-    if (currentUser.empty()) {
-        std::cout << "Please login first." << std::endl;
-        return;
-    }
-
-    if (!authSystem.currentUserHasRole("admin") && !authSystem.currentUserHasRole("manager")) {
-        std::cout << "Permission denied. Only admins and managers can save interventions." << std::endl;
-        return;
-    }
-
-    if (manager->saveInterventions()) {
-        std::cout << "Interventions saved." << std::endl;
-    } else {
-        std::cout << "Failed to save interventions." << std::endl;
-    }
-}
-
-void CLI::handleLoad( [[maybe_unused]] const std::vector<std::string>& args) {
+void CLI::handleInitialize([[maybe_unused]] const std::vector<std::string>& args) {
     if (currentUser.empty()) {
         std::cout << "Please login first." << std::endl;
         return;
     }
 
     if (!authSystem.currentUserHasRole("admin")) {
-        std::cout << "Permission denied. Only admins can load interventions." << std::endl;
+        std::cout << "Permission denied. Only admins can initialize the system." << std::endl;
         return;
-    }
-
-    // Note: We need to access this through our facade
-    // For this example, we'll assume InterventionManager has a loadInterventions method
-    if (dynamic_cast<InterventionManager*>(manager.get())->loadInterventions()) {
-        std::cout << "Interventions loaded." << std::endl;
-    } else {
-        std::cout << "Failed to load interventions." << std::endl;
-    }
-}
-void CLI::handleSaveData(const std::vector<std::string>& args) {
-    if (currentUser.empty()) {
-        std::cout << "Please login first." << std::endl;
-        return;
-    }
-
-    if (!authSystem.currentUserHasRole("admin") && !authSystem.currentUserHasRole("manager")) {
-        std::cout << "Permission denied. Only admins and managers can save data." << std::endl;
-        return;
-    }
-
-    std::string interventionsFile = "./interventions.json";
-    std::string techniciansFile = "./technicians.json";
-
-    if (args.size() >= 1) {
-        interventionsFile = args[0];
-    }
-
-    if (args.size() >= 2) {
-        techniciansFile = args[1];
     }
 
     InterventionManager* realManager = manager->getRealManager();
     if (realManager == nullptr) {
-        std::cout << "Failed to access intervention manager." << std::endl;
+        std::cout << "Failed to access the manager." << std::endl;
         return;
     }
 
-    if (realManager->saveData(interventionsFile, techniciansFile)) {
-        std::cout << "Data saved successfully." << std::endl;
+    if (realManager->initializeWithSampleData()) {
+        std::cout << "System initialized with sample data." << std::endl;
     } else {
-        std::cout << "Failed to save data." << std::endl;
+        std::cout << "Failed to initialize the system." << std::endl;
     }
 }
 
-void CLI::handleLoadData(const std::vector<std::string>& args) {
+void CLI::handleExport(const std::vector<std::string>& args) {
     if (currentUser.empty()) {
         std::cout << "Please login first." << std::endl;
         return;
     }
 
-    if (!authSystem.currentUserHasRole("admin")) {
-        std::cout << "Permission denied. Only admins can load data." << std::endl;
+    if (!authSystem.currentUserHasRole("admin") && !authSystem.currentUserHasRole("manager")) {
+        std::cout << "Permission denied. Only admins and managers can export data." << std::endl;
         return;
     }
 
-    std::string interventionsFile = "./interventions.json";
-    std::string techniciansFile = "./technicians.json";
-
-    if (args.size() >= 1) {
-        interventionsFile = args[0];
+    if (args.size() < 2) {
+        std::cout << "Usage: export <format> <output_file>" << std::endl;
+        std::cout << "Formats: text, csv, json" << std::endl;
+        std::cout << "Example: export csv schedule.csv" << std::endl;
+        return;
     }
 
-    if (args.size() >= 2) {
-        techniciansFile = args[1];
+    std::string format = args[0];
+    std::string outputFile = args[1];
+
+    // Convert format to lowercase
+    std::transform(format.begin(), format.end(), format.begin(),
+                  [](unsigned char c) { return std::tolower(c); });
+
+    // Check format
+    if (format != "text" && format != "csv" && format != "json") {
+        std::cout << "Invalid format. Use one of: text, csv, json" << std::endl;
+        return;
     }
 
-    // Note: Nous devons accéder à travers notre façade
-    if (dynamic_cast<InterventionManager*>(manager.get())->loadData(interventionsFile, techniciansFile)) {
-        std::cout << "Data loaded successfully." << std::endl;
+    InterventionManager* realManager = manager->getRealManager();
+    if (realManager == nullptr) {
+        std::cout << "Failed to access the manager." << std::endl;
+        return;
+    }
+
+    if (realManager->exportSchedule(format, outputFile)) {
+        std::cout << "Schedule exported to " << outputFile << " in " << format << " format." << std::endl;
     } else {
-        std::cout << "Failed to load data." << std::endl;
+        std::cout << "Failed to export schedule." << std::endl;
     }
 }
 
@@ -924,15 +883,8 @@ void CLI::handleDecorateIntervention(const std::vector<std::string>& args) {
 
     std::string type = args[1];
 
-    // Get access to the real manager
-    InterventionManager* realManager = manager->getRealManager();
-    if (realManager == nullptr) {
-        std::cout << "Failed to access intervention manager." << std::endl;
-        return;
-    }
-
     // Get the intervention
-    const Intervention* intervention = realManager->getIntervention(id);
+    const Intervention* intervention = manager->getIntervention(id);
     if (intervention == nullptr) {
         std::cout << "Intervention not found." << std::endl;
         return;
@@ -941,12 +893,12 @@ void CLI::handleDecorateIntervention(const std::vector<std::string>& args) {
     // Apply decorator
     bool success = false;
     if (type == "gps") {
-        success = realManager->decorateWithGPS(id);
+        success = manager->decorateWithGPS(id);
         if (success) {
             std::cout << "GPS tracking added to intervention #" << id << "." << std::endl;
         }
     } else if (type == "attachments") {
-        success = realManager->decorateWithAttachments(id);
+        success = manager->decorateWithAttachments(id);
         if (success) {
             std::cout << "Attachments capability added to intervention #" << id << "." << std::endl;
         }
@@ -990,15 +942,8 @@ void CLI::handleAddAttachment(const std::vector<std::string>& args) {
     std::string filename = args[1];
     std::string description = args.size() > 2 ? args[2] : "";
 
-    // Get access to the real manager
-    InterventionManager* realManager = manager->getRealManager();
-    if (realManager == nullptr) {
-        std::cout << "Failed to access intervention manager." << std::endl;
-        return;
-    }
-
     // Add attachment
-    if (realManager->addAttachment(id, filename, description)) {
+    if (manager->addAttachment(id, filename, description)) {
         std::cout << "Attachment added to intervention #" << id << "." << std::endl;
     } else {
         std::cout << "Failed to add attachment. Make sure the intervention exists and has the attachments decorator." << std::endl;
@@ -1034,15 +979,8 @@ void CLI::handleAddGPSCoordinate(const std::vector<std::string>& args) {
         return;
     }
 
-    // Get access to the real manager
-    InterventionManager* realManager = manager->getRealManager();
-    if (realManager == nullptr) {
-        std::cout << "Failed to access intervention manager." << std::endl;
-        return;
-    }
-
     // Add GPS coordinate
-    if (realManager->addGPSCoordinate(id, latitude, longitude)) {
+    if (manager->addGPSCoordinate(id, latitude, longitude)) {
         std::cout << "GPS coordinate added to intervention #" << id << "." << std::endl;
     } else {
         std::cout << "Failed to add GPS coordinate. Make sure the intervention exists and has the GPS decorator." << std::endl;

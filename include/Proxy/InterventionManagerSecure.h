@@ -95,8 +95,6 @@ public:
 
     std::map<int, int> getInterventionCountsForMonth(int month, int year) const override;
 
-    bool saveInterventions() override;
-
    /**
     * @brief Get access to the real manager
     * @return Pointer to the real InterventionManager

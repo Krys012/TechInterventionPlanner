@@ -102,12 +102,6 @@ public:
      */
     virtual std::map<int, int> getInterventionCountsForMonth(int month, int year) const = 0;
 
-    /**
-     * @brief Save all interventions to persistent storage
-     * @return True if save was successful
-     */
-    virtual bool saveInterventions() = 0;
-
     virtual bool decorateWithGPS(int interventionId) = 0;
     virtual bool decorateWithAttachments(int interventionId) = 0;
     virtual bool addGPSCoordinate(int interventionId, double latitude, double longitude) = 0;

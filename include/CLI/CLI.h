@@ -74,13 +74,11 @@ private:
     void handleAddTechnician(const std::vector<std::string>& args);
     void handleListTechnicians(const std::vector<std::string>& args);
     void handleCalendar(const std::vector<std::string>& args);
-    void handleSave(const std::vector<std::string>& args);
-    void handleLoad(const std::vector<std::string>& args);
-    void handleSaveData(const std::vector<std::string>& args);
-    void handleLoadData(const std::vector<std::string>& args);
     void handleDecorateIntervention(const std::vector<std::string>& args);
     void handleAddAttachment(const std::vector<std::string>& args);
     void handleAddGPSCoordinate(const std::vector<std::string>& args);
+    void handleInitialize(const std::vector<std::string>& args);
+    void handleExport(const std::vector<std::string>& args);
 
 
 public:
